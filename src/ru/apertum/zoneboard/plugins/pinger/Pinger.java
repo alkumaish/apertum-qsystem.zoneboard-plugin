@@ -1,0 +1,113 @@
+/*
+ *  Copyright (C) 2010 {Apertum}Projects. web: www.apertum.ru email: info@apertum.ru
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package ru.apertum.zoneboard.plugins.pinger;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Properties;
+import ru.apertum.qsystem.common.cmd.CmdParams;
+import ru.apertum.qsystem.common.cmd.RpcGetInt;
+import ru.apertum.qsystem.common.model.INetProperty;
+import ru.apertum.qsystem.common.NetCommander;
+import ru.apertum.qsystem.extra.IPing;
+import ru.apertum.qsystem.server.ServerProps;
+import ru.apertum.zoneboard.plugins.IZoneBoardSenderPluginUID;
+
+/**
+ *
+ * @author egorov
+ */
+public class Pinger implements IPing, IZoneBoardSenderPluginUID {
+
+    @Override
+    public String getDescription() {
+        final Properties settings = new Properties();
+        final InputStream inStream = settings.getClass().getResourceAsStream("/version.properties");
+        try {
+            settings.load(inStream);
+        } catch (IOException ex) {
+            throw new RuntimeException("Проблемы с чтением версии. ", ex);
+        }
+        return "Плагин \"ZoneboardPlugin\" v.=" + settings.getProperty("version") + " дата=" + settings.getProperty("date") + " для опроса зонального сервера вывода информации на существование и совместимость.";
+    }
+
+    @Override
+    public int ping() {
+        //System.out.println("ZoneBoardSenderPlugin: IPing");
+        final Properties settings = new Properties();
+        final InputStream inStream = settings.getClass().getResourceAsStream("/version.properties");
+        try {
+            settings.load(inStream);
+        } catch (IOException ex) {
+            throw new RuntimeException("Проблемы с чтением версии. ", ex);
+        }
+        final INetProperty props = new INetProperty() {
+
+            @Override
+            public Integer getPort() {
+                return ServerProps.getInstance().getProps().getZoneBoardServPort();
+            }
+
+            @Override
+            public InetAddress getAddress() {
+                try {
+                    return InetAddress.getByName(ServerProps.getInstance().getProps().getZoneBoardServAddr());
+                } catch (UnknownHostException ex) {
+                  //  QLog.l().logger().error("Проблема с getAddress(). ", ex);
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        return pinger(props, settings.getProperty("version"));
+    }
+
+    @Override
+    public long getUID() {
+        return UID;
+    }
+    
+     /**
+     * пингануть используя основной код из главной проги
+     * @param netProperty параметры соединения с зональном сервером.
+     */
+    public int pinger(INetProperty netProperty, String version) {
+        //QLog.l().logger().info("Встать в очередь.");
+        // загрузим ответ
+        final CmdParams params = new CmdParams();
+        params.textData = version;
+        String res = null;
+        try {
+            res = NetCommander.send(netProperty, "ping" , params);
+        } catch (Exception ex) {// вывод исключений
+          //  QLog.l().logger().error("Проблема с command. ", ex);
+            return -100500;
+        }
+        final Gson gson = new Gson();
+        final RpcGetInt rpc;
+        try {
+            rpc = gson.fromJson(res, RpcGetInt.class);
+        } catch (JsonParseException ex) {
+          //  QLog.l().logger().error("Не возможно интерпритировать ответ.", ex);
+            return -100500;
+        } 
+        return rpc.getResult();
+    }
+}
