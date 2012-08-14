@@ -23,7 +23,7 @@ public class PingResult {
     }
 
     public boolean isReady() {
-        return result == 1;
+        return result > 0;
     }
 
     public static PingResult getInstance() {

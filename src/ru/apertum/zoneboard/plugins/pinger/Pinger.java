@@ -20,15 +20,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Properties;
 import ru.apertum.qsystem.common.cmd.CmdParams;
 import ru.apertum.qsystem.common.cmd.RpcGetInt;
 import ru.apertum.qsystem.common.model.INetProperty;
 import ru.apertum.qsystem.common.NetCommander;
 import ru.apertum.qsystem.extra.IPing;
-import ru.apertum.qsystem.server.ServerProps;
+import ru.apertum.zoneboard.NetProperty;
+import ru.apertum.zoneboard.ZoneServerList;
 import ru.apertum.zoneboard.plugins.IZoneBoardSenderPluginUID;
 
 /**
@@ -59,32 +58,22 @@ public class Pinger implements IPing, IZoneBoardSenderPluginUID {
         } catch (IOException ex) {
             throw new RuntimeException("Проблемы с чтением версии. ", ex);
         }
-        final INetProperty props = new INetProperty() {
-
-            @Override
-            public Integer getPort() {
-                return ServerProps.getInstance().getProps().getZoneBoardServPort();
+        int i = 0;
+        for (NetProperty prop : ZoneServerList.getInstance().getAddrs()) {
+            int res = pinger(prop, settings.getProperty("version"));
+            if (res == 1) {
+                i++;
             }
-
-            @Override
-            public InetAddress getAddress() {
-                try {
-                    return InetAddress.getByName(ServerProps.getInstance().getProps().getZoneBoardServAddr());
-                } catch (UnknownHostException ex) {
-                  //  QLog.l().logger().error("Проблема с getAddress(). ", ex);
-                    throw new RuntimeException(ex);
-                }
-            }
-        };
-        return pinger(props, settings.getProperty("version"));
+        }
+        return i;
     }
 
     @Override
     public long getUID() {
         return UID;
     }
-    
-     /**
+
+    /**
      * пингануть используя основной код из главной проги
      * @param netProperty параметры соединения с зональном сервером.
      */
@@ -95,9 +84,9 @@ public class Pinger implements IPing, IZoneBoardSenderPluginUID {
         params.textData = version;
         String res = null;
         try {
-            res = NetCommander.send(netProperty, "ping" , params);
+            res = NetCommander.send(netProperty, "ping", params);
         } catch (Exception ex) {// вывод исключений
-          //  QLog.l().logger().error("Проблема с command. ", ex);
+            //  QLog.l().logger().error("Проблема с command. ", ex);
             return -100500;
         }
         final Gson gson = new Gson();
@@ -105,9 +94,9 @@ public class Pinger implements IPing, IZoneBoardSenderPluginUID {
         try {
             rpc = gson.fromJson(res, RpcGetInt.class);
         } catch (JsonParseException ex) {
-          //  QLog.l().logger().error("Не возможно интерпритировать ответ.", ex);
+            //  QLog.l().logger().error("Не возможно интерпритировать ответ.", ex);
             return -100500;
-        } 
+        }
         return rpc.getResult();
     }
 }

@@ -16,15 +16,14 @@
  */
 package ru.apertum.zoneboard.plugins.events;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import ru.apertum.qsystem.common.CustomerState;
 import ru.apertum.qsystem.common.cmd.RpcToZoneServer;
-import ru.apertum.qsystem.common.model.INetProperty;
 import ru.apertum.qsystem.common.NetCommander;
 import ru.apertum.qsystem.common.model.QCustomer;
 import ru.apertum.qsystem.extra.IChangeCustomerStateEvent;
-import ru.apertum.qsystem.server.ServerProps;
+import ru.apertum.zoneboard.NetProperty;
+import ru.apertum.zoneboard.Sender;
+import ru.apertum.zoneboard.ZoneServerList;
 import ru.apertum.zoneboard.plugins.IZoneBoardSenderPluginUID;
 import ru.apertum.zoneboard.plugins.pinger.PingResult;
 
@@ -38,10 +37,10 @@ public class EventSender implements IChangeCustomerStateEvent, IZoneBoardSenderP
     @Override
     public void change(QCustomer qc, CustomerState cs, Long newServiceId) {
         //System.out.println("ZoneBoardSenderPlugin: IChangeCustomerStateEvent");
-        if (!PingResult.getInstance().isReady()) {
-           // QLog.l().logger().error("Версия плагина \"ZoneboardPlugin\" не сообветствует версии зональго сервера ввыда инфмации.");
-            return;
-        }
+        //if (!PingResult.getInstance().isReady()) {
+        // QLog.l().logger().error("Версия плагина \"ZoneboardPlugin\" не сообветствует версии зональго сервера ввыда инфмации.");
+        //    return;
+        //}
         // Создаем событие
         // Отсылаем событие
         String cmdName = "kill";
@@ -61,11 +60,11 @@ public class EventSender implements IChangeCustomerStateEvent, IZoneBoardSenderP
             case STATE_DEAD:
                 break;
             case STATE_FINISH:
-                break;    
+                break;
             case STATE_POSTPONED:
-                break;   
+                break;
             case STATE_REDIRECT:
-                break;        
+                break;
             default:// нужная вещь. чтобы отсечь состояния, которые не при чем в зональном табло
                 return;
 
@@ -73,29 +72,24 @@ public class EventSender implements IChangeCustomerStateEvent, IZoneBoardSenderP
 
         final RpcToZoneServer params = new RpcToZoneServer(new RpcToZoneServer.Data(qc.getUser().getName(), qc.getUser().getPoint(), qc.getPrefix(), qc.getNumber(), qc.getUser().getAdressRS()));
         params.setMethod(cmdName);
-        try {
-            NetCommander.sendRpc(netProperty, params);
-        } catch (Exception ex) {// вывод исключений
-          //  QLog.l().logger().error("Проблема с командой. ", ex);
+
+        for (final NetProperty prop : ZoneServerList.getInstance().getAddrs()) {
+            final Thread thread = new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        new Sender().sendRpc(prop, params);
+                    } catch (Exception ex) {// вывод исключений
+                        //  QLog.l().logger().error("Проблема с командой. ", ex);
+                        System.err.println(ex);
+                    }
+                }
+            });
+            thread.start();
         }
+
     }
-    final public INetProperty netProperty = new INetProperty() {
-
-        @Override
-        public Integer getPort() {
-            return ServerProps.getInstance().getProps().getZoneBoardServPort();
-        }
-
-        @Override
-        public InetAddress getAddress() {
-            try {
-                return InetAddress.getByName(ServerProps.getInstance().getProps().getZoneBoardServAddr());
-            } catch (UnknownHostException ex) {
-              //  QLog.l().logger().error("Проблема с getAddress(). ", ex);
-                throw new RuntimeException(ex);
-            }
-        }
-    };
 
     @Override
     public String getDescription() {
