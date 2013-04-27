@@ -18,14 +18,12 @@ package ru.apertum.zoneboard.plugins.events;
 
 import ru.apertum.qsystem.common.CustomerState;
 import ru.apertum.qsystem.common.cmd.RpcToZoneServer;
-import ru.apertum.qsystem.common.NetCommander;
 import ru.apertum.qsystem.common.model.QCustomer;
 import ru.apertum.qsystem.extra.IChangeCustomerStateEvent;
 import ru.apertum.zoneboard.NetProperty;
 import ru.apertum.zoneboard.Sender;
 import ru.apertum.zoneboard.ZoneServerList;
 import ru.apertum.zoneboard.plugins.IZoneBoardSenderPluginUID;
-import ru.apertum.zoneboard.plugins.pinger.PingResult;
 
 /**
  * Плагин во время смены статуса клиенту отсылает статистику в сервер
