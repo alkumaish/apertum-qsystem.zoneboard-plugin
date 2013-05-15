@@ -14,7 +14,8 @@ import java.net.URLEncoder;
 import java.util.Scanner;
 import ru.apertum.qsystem.common.GsonPool;
 import ru.apertum.qsystem.common.QLog;
-import ru.apertum.qsystem.common.cmd.JsonRPC20;
+import ru.apertum.qsystem.common.cmd.AJsonRPC20;
+import ru.apertum.qsystem.common.cmd.JsonRPC20Error;
 import ru.apertum.qsystem.common.exceptions.QException;
 import ru.apertum.qsystem.common.model.INetProperty;
 
@@ -24,7 +25,7 @@ import ru.apertum.qsystem.common.model.INetProperty;
  */
 public class Sender {
     
-    public String sendRpc(INetProperty netProperty, JsonRPC20 jsonRpc) throws QException {
+    public String sendRpc(INetProperty netProperty, AJsonRPC20 jsonRpc) throws QException {
         final String message;
         Gson gson = GsonPool.getInstance().borrowGson();
         try {
@@ -59,7 +60,7 @@ public class Sender {
         }
         gson = GsonPool.getInstance().borrowGson();
         try {
-            JsonRPC20 rpc = gson.fromJson(data, JsonRPC20.class);
+            final JsonRPC20Error rpc = gson.fromJson(data, JsonRPC20Error.class);
             if (rpc == null) {
                 throw new QException("Ошибка на сервере не позволила сформировать ответ.");
             }
