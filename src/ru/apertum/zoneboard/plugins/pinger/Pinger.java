@@ -39,7 +39,7 @@ public class Pinger implements IPing, IZoneBoardSenderPluginUID {
     @Override
     public String getDescription() {
         final Properties settings = new Properties();
-        final InputStream inStream = settings.getClass().getResourceAsStream("/version.properties");
+        final InputStream inStream = settings.getClass().getResourceAsStream("/zoneboardplugin.properties");
         try {
             settings.load(inStream);
         } catch (IOException ex) {
@@ -52,7 +52,7 @@ public class Pinger implements IPing, IZoneBoardSenderPluginUID {
     public int ping() {
         //System.out.println("ZoneBoardSenderPlugin: IPing");
         final Properties settings = new Properties();
-        final InputStream inStream = settings.getClass().getResourceAsStream("/version.properties");
+        final InputStream inStream = settings.getClass().getResourceAsStream("/zoneboardplugin.properties");
         try {
             settings.load(inStream);
         } catch (IOException ex) {

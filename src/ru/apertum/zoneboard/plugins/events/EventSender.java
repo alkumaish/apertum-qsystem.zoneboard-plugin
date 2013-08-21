@@ -33,6 +33,11 @@ import ru.apertum.zoneboard.plugins.IZoneBoardSenderPluginUID;
 public class EventSender implements IChangeCustomerStateEvent, IZoneBoardSenderPluginUID {
 
     @Override
+    public void change(String userPoint, String customerPrefix, int customerNumber, CustomerState cs) {
+        throw new UnsupportedOperationException("Not supported method.");
+    }
+
+    @Override
     public void change(QCustomer qc, CustomerState cs, Long newServiceId) {
         //System.out.println("ZoneBoardSenderPlugin: IChangeCustomerStateEvent");
         //if (!PingResult.getInstance().isReady()) {
