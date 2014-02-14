@@ -34,7 +34,6 @@ public class EventSender implements IChangeCustomerStateEvent, IZoneBoardSenderP
 
     @Override
     public void change(String userPoint, String customerPrefix, int customerNumber, CustomerState cs) {
-        throw new UnsupportedOperationException("Not supported method.");
     }
 
     @Override

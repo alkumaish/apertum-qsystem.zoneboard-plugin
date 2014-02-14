@@ -6,12 +6,16 @@ package ru.apertum.zoneboard;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Scanner;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 import ru.apertum.qsystem.common.GsonPool;
 import ru.apertum.qsystem.common.QLog;
 import ru.apertum.qsystem.common.cmd.AJsonRPC20;
@@ -21,10 +25,11 @@ import ru.apertum.qsystem.common.model.INetProperty;
 
 /**
  * Копия NetCommander. Нужен для распараллелевания рассылки на зональные сервера
+ *
  * @author Evgeniy Egorov
  */
 public class Sender {
-    
+
     public String sendRpc(INetProperty netProperty, AJsonRPC20 jsonRpc) throws QException {
         final String message;
         Gson gson = GsonPool.getInstance().borrowGson();
@@ -74,5 +79,31 @@ public class Sender {
         }
         return data;
     }
-    
+
+    synchronized public static byte[] compress(byte[] data) {
+        final byte[] output = new byte[data.length];
+        final Deflater compresser = new Deflater();
+        compresser.setInput(data);
+        compresser.finish();
+        final int lenAfterCompress = compresser.deflate(output);
+        byte[] output1 = new byte[lenAfterCompress];
+        System.arraycopy(output, 0, output1, 0, output1.length);
+        return output1;
+    }
+
+    synchronized public static byte[] decompress(byte[] zipped) throws DataFormatException, IOException {
+        final Inflater decompresser = new Inflater();
+        decompresser.setInput(zipped, 0, zipped.length);
+        byte[] result = new byte[1024];
+        int resultLength = decompresser.inflate(result);
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        while (resultLength != 0) {
+            outputStream.write(result, 0, resultLength);
+            result = new byte[1024];
+            resultLength = decompresser.inflate(result);
+        }
+        decompresser.end();
+        return outputStream.toByteArray();
+    }
+
 }
